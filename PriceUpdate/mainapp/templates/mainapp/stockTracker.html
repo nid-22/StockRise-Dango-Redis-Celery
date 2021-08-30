@@ -1,0 +1,100 @@
+{% extends 'mainapp/base.html' %}
+{% load static %}
+{% block title %}
+{% load myfilters %}
+StockTracker
+{% endblock %}
+{% block css %}
+<style>
+  .red {
+    color: red;
+  }
+
+  .green {
+    color: green;
+  }
+
+  .table-container {
+    overflow-x: scroll;
+  }
+</style>
+{% endblock %}
+{% block body %}
+<div class="container">
+  <h1>Live Stock Tracker</h1>
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">SNo.</th>
+          <th scope="col">Stock</th>
+          <th scope="col">Price</th>
+          <th scope="col">Previous Close</th>
+          <th scope="col">Open</th>
+          <th scope="col">Change</th>
+          <th scope="col">Market Cap</th>
+          <th scope="col">Volume</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k,v in stockData.items %}
+        <tr>
+          <td>{{forloop.counter}}</td>
+          <td>{{k}}</td>
+          <td id='{{k}}_price'>{{v|get:'Quote Price'|floatformat:4}}</td>
+          <td id='{{k}}_previousclose'>{{v|get:'Previous Close'|floatformat:4}}</td>
+          <td>{{v|get:'Open'|floatformat:4}}</td>
+          <td id='{{k}}_change'>
+            <script>
+              var change = document.getElementById('{{k}}_price').innerHTML - document.getElementById('{{k}}_previousclose').innerHTML
+              change = Number((change).toFixed(4))
+              if(change>0){
+                document.getElementById('{{k}}_change').className = 'green'
+                document.getElementById('{{k}}_change').innerHTML = '+ ' +change
+              }else if(change<0){
+                document.getElementById('{{k}}_change').className = 'red'
+                document.getElementById('{{k}}_change').innerHTML = '- ' +change
+              }else{
+                document.getElementById('{{k}}_change').innerHTML = change
+              }
+              
+            </script>
+          </td>
+          <td>{{v|get:'Market Cap'}}</td>
+          <td>{{v|get:'Volume' }}</td>
+          
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <br>
+  <div class="gap-2">
+    <a class="btn btn-primary" href="/" role="button">Home</a>
+</div>
+</div>
+</div>
+{{ room_name|json_script:"room_name" }}
+<script>
+  const roomName = '{{room_name}}'
+  console.log(roomName)
+  var queryString = window.location.search;
+  
+  queryString = queryString.substring(1);
+  console.log(queryString);
+  const stockSocket = new WebSocket(
+    'ws://' +
+    window.location.host +
+    '/ws/stock/' +
+    roomName +
+    '/' +
+    '?' +
+    queryString
+  );
+  stockSocket.onmessage = function(e){
+    console.log(e.data);
+    const data = JSON.parse(e.data);
+    console.log(data);
+  }
+  </script>
+{% endblock %}
